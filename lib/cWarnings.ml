@@ -118,11 +118,13 @@ let set_status ~name status =
 let split_flags s =
   let reg = Str.regexp "[ ,]+" in Str.split reg s
 
-let check_warning ~silent (_status,name) =
-  is_all_keyword name ||
-  Hashtbl.mem categories name ||
-  Hashtbl.mem warnings name ||
-  (if not silent then warn_unknown_warning name; false)
+let check_warning_id ~silent (_status,name) =
+  if not silent && not
+       (is_all_keyword name ||
+        Hashtbl.mem categories name ||
+        Hashtbl.mem warnings name) then
+    warn_unknown_warning name;
+  (_status, name)
 
 (** [cut_before_all_rev] removes all flags subsumed by a later occurrence of the
     "all" flag, and reverses the list. *)
@@ -153,7 +155,7 @@ let uniquize_flags_rev flags =
 (** [normalize_flags] removes unknown or redundant warnings. If [silent] is
     true, it emits a warning when an unknown warning is met. *)
 let normalize_flags ~silent warnings =
-  let warnings = List.filter (check_warning ~silent) warnings in
+  let warnings = List.map (check_warning_id ~silent) warnings in
   let warnings = cut_before_all_rev warnings in
   uniquize_flags_rev warnings
 
